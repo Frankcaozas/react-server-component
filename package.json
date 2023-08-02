@@ -1,5 +1,5 @@
 {
-  "name": "my-blog",
+  "name": "react-server-component",
   "type": "module",
   "license": "MIT",
   "dependencies": {
@@ -7,7 +7,8 @@
     "@babel/plugin-transform-react-jsx": "^7.21.5",
     "escape-html": "^1.0.3",
     "nodemon": "^2.0.22",
-    "react": "^18.2.0"
+    "react": "^18.2.0",
+    "sanitize-filename": "^1.6.3"
   },
   "scripts": {
     "start": "nodemon -- --experimental-loader ./node-jsx-loader.js ./server.js"
