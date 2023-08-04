@@ -4,16 +4,17 @@ let currentPathname = window.location.pathname
 async function navigate(pathname) {
   currentPathname = pathname
   //fetch到新的内容
-  const response = await fetch(pathname)
+  const response = await fetch(pathname+'?jsx')
   const html = await response.text()
   // 上面fetch是异步的，有可能新的navigate被触发
   if (pathname === currentPathname) {
-    const bodyStartIndex = html.indexOf('<body>') + '<body>'.length
-    const bodyEndIndex = html.lastIndexOf('</body>')
-    const bodyHTML = html.slice(bodyStartIndex, bodyEndIndex)
+    console.log('jsxString', html)
+    // const bodyStartIndex = html.indexOf('<body>') + '<body>'.length
+    // const bodyEndIndex = html.lastIndexOf('</body>')
+    // const bodyHTML = html.slice(bodyStartIndex, bodyEndIndex)
 
-    // 替换成新的内容
-    document.body.innerHTML = bodyHTML
+    // // 替换成新的内容
+    // document.body.innerHTML = bodyHTML
   }
 }
 
