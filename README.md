@@ -10,6 +10,6 @@
 - [x] Step 4: async components [stackblitz](https://stackblitz.com/edit/stackblitz-starters-ixiujx?file=package.json)
 - [ ] Step 5: preserve state on navigation 
   - [x] Step 5.1: intercept navigations [stackblitz](https://stackblitz.com/edit/stackblitz-starters-ynvapw)
-  - [ ] Step 5.2: send JSX over the wire 
+  - [x] Step 5.2: send JSX over the wire [stackblitz](https://stackblitz.com/edit/stackblitz-starters-gvmb7m?file=server.js,client.js)
   - [ ] Step 5.3: apply JSX updates on the client
 - [ ] Step 6: clean things up 
