@@ -10,7 +10,7 @@
 - [ ] 5: preserve state on navigation 
   - [x] 5.1: intercept navigations [stackblitz](https://stackblitz.com/edit/stackblitz-starters-ynvapw)
   - [x] 5.2: send JSX over the wire [stackblitz](https://stackblitz.com/edit/stackblitz-starters-gvmb7m?file=server.js,client.js)
-  - [ ] 5.3: apply JSX updates on the client
-    - [ ] 5.3.1 fetch JSX from the server
-    - [ ] 5.3.2 inline the initial JSX into the HTML
+  - [x] 5.3: apply JSX updates on the client [stackblitz](https://stackblitz.com/edit/stackblitz-starters-cgntq6?file=server.js,client.js)
+    - [x] 5.3.1 fetch JSX from the server
+    - [x] 5.3.2 inline the initial JSX into the HTML
 - [ ] 6: clean things up 
