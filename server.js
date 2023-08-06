@@ -13,10 +13,11 @@ createServer(async (req, res) => {
       await sendHTML(res, <Router url={url} />)
     }
   } catch (err) {
+    console.log(err)
     res.statusCode = err.statusCode ?? 500
     res.end()
   }
-}).listen(8080)
+}).listen(8089)
 
 /**
  *
@@ -24,16 +25,45 @@ createServer(async (req, res) => {
  * @param {object} jsx
  */
 async function sendJSX(res, jsx) {
-  const clientJSX = await renderJSXToClitenJSX(jsx)
-  console.log(clientJSX)
-  const jsxStr = JSON.stringify(clientJSX, null, 2) //缩进2格
+  const clientJSX = await renderJSXToClientJSX(jsx)
+  const jsxStr = JSON.stringify(clientJSX, stringfy, 2) //缩进2格
   res.setHeader('Conten-Type', 'application/json')
   res.end(jsxStr)
+}
+/**
+ *
+ * @param {string | Symbol} key
+ * @param {any} val
+ */
+function stringfy(key, val) {
+  if (val === Symbol.for('react.element')) {
+    return '$REACT' //symbol 转不了，取一个字符串标记
+  } else if (typeof val === 'string' && val.startsWith('$')) {
+    // 避免冲突，在前面都加个 $.
+    return '$' + val
+  } else {
+    return val
+  }
 }
 
 async function sendHTML(res, jsx) {
   let html = await renderJSXToHTML(jsx)
-  html += "<script type='module' src='/client.js'></script>"
+  const clientJSX = await renderJSXToClientJSX(jsx);
+  const clientJSXString = JSON.stringify(clientJSX, stringfy)
+  html += `<script>window.__INITIAL_CLIENT_JSX_STRING__ = `
+  html += JSON.stringify(clientJSXString).replace(/</g, '\\u003c')
+  html += `</script>`
+  html += `
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://esm.sh/react@canary",
+          "react-dom/client": "https://esm.sh/react-dom@canary/client"
+        }
+      }
+    </script>
+    <script type="module" src="/client.js"></script>
+  `
   res.setHeader('Content-Type', 'text/html')
   res.end(html)
 }
@@ -134,7 +164,7 @@ function throwPageNotFound(cause) {
   throw notFound
 }
 
-async function renderJSXToClitenJSX(jsx) {
+async function renderJSXToClientJSX(jsx) {
   if (
     //基本数据类型
     typeof jsx === 'string' ||
@@ -145,23 +175,23 @@ async function renderJSXToClitenJSX(jsx) {
     return jsx
   else if (Array.isArray(jsx)) {
     //数组
-    return await Promise.all(jsx.map((child) => renderJSXToClitenJSX(child)))
+    return await Promise.all(jsx.map((child) => renderJSXToClientJSX(child)))
   } else if (typeof jsx === 'object') {
     //对象
     // nodes
-    if ((jsx.$$typeof === Symbol.for('react.element'))) {
+    if (jsx.$$typeof === Symbol.for('react.element')) {
       //普通标签
       if (typeof jsx.type === 'string') {
         return {
           ...jsx,
-          props: await renderJSXToClitenJSX(jsx.props),
+          props: await renderJSXToClientJSX(jsx.props),
         }
         //react组件
       } else if (typeof jsx.type === 'function') {
         const Component = jsx.type
         const props = jsx.props
         const returnJSX = await Component(props)
-        return renderJSXToClitenJSX(returnJSX)
+        return renderJSXToClientJSX(returnJSX)
       } else {
         throw new Error('Not Implemented')
       }
@@ -170,7 +200,7 @@ async function renderJSXToClitenJSX(jsx) {
         await Promise.all(
           Object.entries(jsx).map(async ([key, val]) => [
             key,
-            await renderJSXToClitenJSX(val),
+            await renderJSXToClientJSX(val),
           ])
         )
       )
@@ -186,8 +216,23 @@ async function renderJSXToHTML(jsx) {
   } else if (jsx == null || typeof jsx === 'boolean') {
     return ''
   } else if (Array.isArray(jsx)) {
-    const child = await Promise.all(jsx.map((child) => renderJSXToHTML(child)))
-    return child.join('')
+    // const child = await Promise.all(jsx.map((child) => renderJSXToHTML(child)))
+    // return child.join('')
+    const childHtmls = await Promise.all(
+      jsx.map((child) => renderJSXToHTML(child))
+    );
+    let html = "";
+    let wasTextNode = false;
+    let isTextNode = false;
+    for (let i = 0; i < jsx.length; i++) {
+      isTextNode = typeof jsx[i] === "string" || typeof jsx[i] === "number";
+      if (wasTextNode && isTextNode) {
+        html += "<!-- -->";
+      }
+      html += childHtmls[i];
+      wasTextNode = isTextNode;
+    }
+    return html;
   } else if (typeof jsx === 'object') {
     if (jsx.$$typeof === Symbol.for('react.element')) {
       // 原生html标签

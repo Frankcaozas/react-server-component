@@ -1,28 +1,42 @@
+import { hydrateRoot } from 'react-dom/client'
+
+const root = hydrateRoot(document, getInitialClientJSX())
 let currentPathname = window.location.pathname
 
 // 拦截后的逻辑
 async function navigate(pathname) {
   currentPathname = pathname
   //fetch到新的内容
-  const response = await fetch(pathname+'?jsx')
-  const html = await response.text()
+  const clientJSX = await fetchClientJSX(pathname)
   // 上面fetch是异步的，有可能新的navigate被触发
   if (pathname === currentPathname) {
-    console.log('jsxString', html)
-    // const bodyStartIndex = html.indexOf('<body>') + '<body>'.length
-    // const bodyEndIndex = html.lastIndexOf('</body>')
-    // const bodyHTML = html.slice(bodyStartIndex, bodyEndIndex)
-
-    // // 替换成新的内容
-    // document.body.innerHTML = bodyHTML
+    root.render(clientJSX)
   }
 }
 
-//
+async function fetchClientJSX(pathname) {
+  const response = await fetch(pathname + '?jsx')
+  const jsxString = await response.text()
+  return JSON.parse(jsxString, parseJSX)
+}
+
+function parseJSX(key, value) {
+  if (value === '$REACT') {
+    return Symbol.for('react.element')
+  } else if (typeof value === 'string' && value.startsWith('$$')) {
+    return value.slice(1)
+  } else {
+    return value
+  }
+}
+
+function getInitialClientJSX() {
+  return JSON.parse(window.__INITIAL_CLIENT_JSX_STRING__, parseJSX)
+}
+
 window.addEventListener(
   'click',
   (e) => {
-    console.log('CLICK A')
     //只监听点击链接
     if (e.target.tagName !== 'A') return
     //忽略在新窗口打开
@@ -41,7 +55,6 @@ window.addEventListener(
 )
 
 window.addEventListener('popstate', () => {
-  console.log('POPSTATE')
   //点浏览器前进或者后退，同样走navigate的逻辑
   navigate(window.location.pathname)
 })
