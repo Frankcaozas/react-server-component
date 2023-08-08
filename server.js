@@ -2,6 +2,7 @@ import escapeHtml from 'escape-html'
 import { readFile, readdir } from 'fs/promises'
 import { ServerResponse, createServer } from 'http'
 import sanitizeFilename from 'sanitize-filename'
+import { renderToString } from 'react-dom/server'
 createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host}`)
@@ -47,8 +48,10 @@ function stringfy(key, val) {
 }
 
 async function sendHTML(res, jsx) {
-  let html = await renderJSXToHTML(jsx)
-  const clientJSX = await renderJSXToClientJSX(jsx);
+  //先拿到客户端jsx，避免执行两次组件
+  const clientJSX = await renderJSXToClientJSX(jsx)
+  let html = renderToString(clientJSX)
+
   const clientJSXString = JSON.stringify(clientJSX, stringfy)
   html += `<script>window.__INITIAL_CLIENT_JSX_STRING__ = `
   html += JSON.stringify(clientJSXString).replace(/</g, '\\u003c')
@@ -220,19 +223,19 @@ async function renderJSXToHTML(jsx) {
     // return child.join('')
     const childHtmls = await Promise.all(
       jsx.map((child) => renderJSXToHTML(child))
-    );
-    let html = "";
-    let wasTextNode = false;
-    let isTextNode = false;
+    )
+    let html = ''
+    let wasTextNode = false
+    let isTextNode = false
     for (let i = 0; i < jsx.length; i++) {
-      isTextNode = typeof jsx[i] === "string" || typeof jsx[i] === "number";
+      isTextNode = typeof jsx[i] === 'string' || typeof jsx[i] === 'number'
       if (wasTextNode && isTextNode) {
-        html += "<!-- -->";
+        html += '<!-- -->'
       }
-      html += childHtmls[i];
-      wasTextNode = isTextNode;
+      html += childHtmls[i]
+      wasTextNode = isTextNode
     }
-    return html;
+    return html
   } else if (typeof jsx === 'object') {
     if (jsx.$$typeof === Symbol.for('react.element')) {
       // 原生html标签
